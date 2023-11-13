@@ -1,0 +1,3 @@
+[submodule "solution/src/dependencies/avx_mathfun"]
+	path = solution/src/dependencies/avx_mathfun
+	url = https://github.com/reyoung/avx_mathfun.git

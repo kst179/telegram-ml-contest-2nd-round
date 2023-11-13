@@ -1,15 +1,29 @@
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+# set(CMAKE_C_COMPILER /usr/bin/clang)
 
 project(tglang VERSION 1.0.0 LANGUAGES C)
 set(CMAKE_C_STANDARD 11)
 
-option(EMBED_WEIGHTS "If ON, then models' weights will be embed into binaries" OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Check if a certain condition is met
+set(CMAKE_C_FLAGS_INIT                "-Wall -std=c11")
+set(CMAKE_C_FLAGS_DEBUG_INIT          "-g")
+set(CMAKE_C_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
+set(CMAKE_C_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
+
+option(EMBED_WEIGHTS "If ON, then models' weights will be embed into binaries" OFF)
+option(USE_AVX_EXP "If ON, uses experimental exponentials from avx_mathfun" ON)
+
 if(EMBED_WEIGHTS)
-    # Code to be executed when the condition is true
     add_definitions(-DEMBED_WEIGHTS)
 endif()
+
+if(USE_AVX_EXP)
+    add_definitions(-DUSE_AVX_EXP)
+endif()
+
+include_directories(src/dependencies)
 
 # tokenizer, gru and svc can compile for a long time (if embedding is on)
 # so we compile object files for them once and then use them multiple times

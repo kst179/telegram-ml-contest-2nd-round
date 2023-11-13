@@ -29,15 +29,12 @@ SVC* createSVC(const char* path) {
     svc->num_tokens = num_tokens;
     svc->gru_hid_dim = gru_hid_dim;
 
-    svc->token_weights = createMatrix(num_tokens, num_classes);
-    svc->gru_features_weights = createMatrix(num_classes, gru_hid_dim);
-    svc->bias = createMatrix(1, num_classes);
+    svc->token_weights = matReadFromFile(num_tokens, num_classes, file);
+    svc->gru_features_weights = matReadFromFile(num_classes, gru_hid_dim, file);
+    svc->bias = matReadFromFile(1, num_classes, file);
 
-    svc->scores = createMatrix(1, num_classes);
+    svc->scores = matCreate(1, num_classes);
 
-    fread(svc->token_weights.data, sizeof(float), matSize(svc->token_weights), file);
-    fread(svc->gru_features_weights.data, sizeof(float), matSize(svc->gru_features_weights), file);
-    fread(svc->bias.data, sizeof(float), matSize(svc->bias), file);
     fclose(file);
 
     return svc;
@@ -48,7 +45,7 @@ int predictSVC(SVC* svc, int* tokens, int num_tokens, Matrix gru_last_state) {
 
     for (int i = 0; i < num_tokens; i++) {
         int token_id = tokens[i];
-        Matrix row = submatrix(svc->token_weights, token_id, token_id+1, 0, svc->num_classes);
+        Matrix row = matSubmatrix(svc->token_weights, token_id, token_id+1, 0, svc->num_classes);
         
         matSum(row, svc->scores, svc->scores);
     }
@@ -58,14 +55,14 @@ int predictSVC(SVC* svc, int* tokens, int num_tokens, Matrix gru_last_state) {
     matVecProduct(svc->gru_features_weights, gru_last_state, svc->scores);
     matSum(svc->bias, svc->scores, svc->scores);
 
-    return vecArgmax(svc->scores);
+    return matVecArgmax(svc->scores);
 }
 
 void freeSVC(SVC** svc) {
-    freeMatrix((*svc)->scores);
-    freeMatrix((*svc)->token_weights);
-    freeMatrix((*svc)->gru_features_weights);
-    freeMatrix((*svc)->bias);
+    matFree((*svc)->scores);
+    matFree((*svc)->token_weights);
+    matFree((*svc)->gru_features_weights);
+    matFree((*svc)->bias);
     free(*svc);
     (*svc) = NULL;
 }
