@@ -142,7 +142,7 @@ void tokenize(Tokenizer* tokenizer, const char* string, int* num_tokens, int** t
     *tokens = malloc(sizeof(int) * (strlen(string) + 2));
 
     *num_tokens = 0;
-    tokens[(*num_tokens)++] = tokenizer->start_token_id;
+    (*tokens)[(*num_tokens)++] = tokenizer->start_token_id;
 
     while (1) {
         int token_id = nextToken(tokenizer);
@@ -154,7 +154,7 @@ void tokenize(Tokenizer* tokenizer, const char* string, int* num_tokens, int** t
         (*tokens)[(*num_tokens)++] = token_id;
     }
 
-    tokens[(*num_tokens)++] = tokenizer->start_token_id;
+    (*tokens)[(*num_tokens)++] = tokenizer->start_token_id;
 }
 
 Tokenizer* createDefaultTokenizer() {
