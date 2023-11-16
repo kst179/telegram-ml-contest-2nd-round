@@ -63,13 +63,13 @@ int main() {
         Args args1 = {gru, tokens, num_tokens};
         Args args2 = {gru2, tokens, num_tokens};
 
-        // pthread_create(&thread1, NULL, runPredictThread, &args1);
-        // pthread_create(&thread2, NULL, runPredictThread, &args2);
+        pthread_create(&thread1, NULL, runPredictThread, &args1);
+        pthread_create(&thread2, NULL, runPredictThread, &args2);
 
-        // pthread_join(thread1, NULL);
-        // pthread_join(thread2, NULL);
+        pthread_join(thread1, NULL);
+        pthread_join(thread2, NULL);
 
-        int prediction = predictGRU(gru, tokens, num_tokens);
+        // int prediction = predictGRU(gru, tokens, num_tokens);
 
         // Matrix gru_last_state = getLastStateGRU(gru, tokens, num_tokens);
         // int prediction = predictSVC(svc, tokens, num_tokens, gru_last_state);

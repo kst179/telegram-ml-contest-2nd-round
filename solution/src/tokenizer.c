@@ -51,7 +51,8 @@ void initTokenizer(Tokenizer** tokenizer_p, const char* vocab_path) {
 
     tokenizer->string = NULL;
     tokenizer->char_idx = 0;
-    tokenizer->unk_token_id = 3;
+    tokenizer->start_token_id = 1;
+    tokenizer->unk_token_id = 2;
     tokenizer->offset = 0;
 
     FILE *file;
@@ -138,9 +139,11 @@ int nextToken(Tokenizer* tokenizer) {
 void tokenize(Tokenizer* tokenizer, const char* string, int* num_tokens, int** tokens) {
     setTokenizeString(tokenizer, string);
     
-    *tokens = malloc(sizeof(int) * (strlen(string) + 1));
+    *tokens = malloc(sizeof(int) * (strlen(string) + 2));
 
     *num_tokens = 0;
+    tokens[(*num_tokens)++] = tokenizer->start_token_id;
+
     while (1) {
         int token_id = nextToken(tokenizer);
     
@@ -150,6 +153,8 @@ void tokenize(Tokenizer* tokenizer, const char* string, int* num_tokens, int** t
 
         (*tokens)[(*num_tokens)++] = token_id;
     }
+
+    tokens[(*num_tokens)++] = tokenizer->start_token_id;
 }
 
 Tokenizer* createDefaultTokenizer() {

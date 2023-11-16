@@ -14,6 +14,7 @@ typedef struct Tokenizer{
     size_t offset;
 
     const char* string;
+    int start_token_id;
     int unk_token_id;
     int num_tokens;
     int char_idx;
