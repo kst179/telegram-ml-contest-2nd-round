@@ -1,9 +1,10 @@
 import ctypes
 
+from .paths import *
 
 class CTokenizer:
     def __init__(self):
-        self.lib = ctypes.CDLL("../solution/build/libtokenizer.so")
+        self.lib = ctypes.CDLL(BUILD / "libtokenizer.so")
         self.lib.createTokenizer.argtypes = [ctypes.c_char_p]
         self.lib.createTokenizer.restype = ctypes.POINTER(ctypes.c_void_p)
         self.lib.tokenize.argtypes = [
@@ -13,8 +14,13 @@ class CTokenizer:
             ctypes.POINTER(ctypes.POINTER(ctypes.c_int)),
         ]
 
+        vocab_path = RESOURCES / "tokenizer_vocab.bin"
+        
+        if not vocab_path.exists():
+            raise FileNotFoundError(f"file {vocab_path} not found")
+
         self.tokenizer_p = self.lib.createTokenizer(
-            "solution/resources/tokenizer_vocab.bin".encode()
+            vocab_path.as_posix().encode()
         )
 
     def __call__(self, string):

@@ -1,5 +1,34 @@
+from __future__ import annotations
 from enum import Enum
 
+class BinLabels(Enum):
+    OTHER = 0
+    CODE = 1
+
+    @staticmethod
+    def from_string(s: str) -> BinLabels:
+        if s == "OTHER":
+            return BinLabels.OTHER
+        elif s == "CODE":
+            return BinLabels.CODE
+
+        raise ValueError(f"string should be one of CODE, OTHER, found {s}")
+    
+    @staticmethod
+    def to_string(e: int | BinLabels) -> str:
+        if isinstance(e, int):
+            e = BinLabels(e)
+
+        return "OTHER" if e == BinLabels.OTHER else "CODE"
+    
+    @staticmethod
+    def from_lang(l: str) -> BinLabels:
+        l = Languages.from_string(l)
+        
+        if l == Languages.OTHER:
+            return BinLabels.OTHER
+        
+        return BinLabels.CODE
 
 class Languages(Enum):
     OTHER = 0
@@ -34,7 +63,9 @@ class Languages(Enum):
 
     @staticmethod
     def from_string(s):
-        return string_to_enum[s]
+        if s in string_to_enum:
+            return string_to_enum[s]
+        return Languages.OTHER
 
     @staticmethod
     def to_string(e):

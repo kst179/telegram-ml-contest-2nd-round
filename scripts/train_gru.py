@@ -8,6 +8,9 @@ from tokenizers import ByteLevelBPETokenizer
 from torch import nn
 from torch.utils.data.dataloader import DataLoader
 
+from .gh_dataset import MixedDataset
+from .gru_model import NetworkConfig, Network
+
 tokenizer = ByteLevelBPETokenizer(
     "../artifacts/tokenizer-vocab.json", "../artifacts/tokenizer-merges.txt"
 )
@@ -59,94 +62,79 @@ def collate_fn(batch):
     )
 
 
-class Network(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.embedding = nn.Embedding(num_embeddings=2**15, embedding_dim=96)
-        self.gru = nn.GRU(input_size=96, hidden_size=96, batch_first=True)
-        self.classifier = nn.Linear(96, 100)
+def train():
+    config = NetworkConfig(
+        num_classes=2,
+        vocab_size=2**15,
+        hidden_dim=112,
+        num_layers=3,
+        bidirectional=True,
+        num_threads_per_dir=1,
+    )
 
-    def forward(self, ids, last_elements, return_last_feature=False):
-        """ids: [batch_size, seq_len]"""
-        batch_size = ids.shape[0]
+    train_dataset = MixedDataset(split="train_gru", tokenize=True, subsample_lines=True)
+    val_dataset = MixedDataset(split="test", tokenize=True, subsample_lines=True)
 
-        # [batch_size, seq_len, emb_dim]
-        emb = self.embedding(ids)
+    train_dataloader = DataLoader(
+        train_dataset, batch_size=16, shuffle=True, collate_fn=collate_fn
+    )
+    val_dataloader = DataLoader(
+        val_dataset, batch_size=16, shuffle=False, collate_fn=collate_fn
+    )
 
-        # [batch_size, seq_len, emb_dim]
-        features, _ = self.gru(emb)
+    model = Network()
+    model.cuda()
 
-        last_feature = features[range(batch_size), last_elements]
+    writer = SummaryWriter()
 
-        # [batch_size, hid_dim] -> [batch_size, 100]
-        logits = self.classifier(last_feature)
+    optim = torch.optim.Adam(model.parameters(), lr=1e-4)
+    cross_entropy = nn.CrossEntropyLoss()
+    grad_accum_steps = 2
 
-        if not return_last_feature:
-            return logits
+    step = 0
 
-        return logits, last_feature
+    for epoch in tqdm.trange(200):
+        model.train()
+        cross_entropy.reduction = "mean"
+        for batch in tqdm.tqdm(train_dataloader):
+            batch.to("cuda")
 
-
-train_dataset = GHDataset(split="train_gru", tokenize=True, subsample_lines=True)
-val_dataset = GHDataset(split="test", tokenize=True, subsample_lines=True)
-
-train_dataloader = DataLoader(
-    train_dataset, batch_size=16, shuffle=True, collate_fn=collate_fn
-)
-val_dataloader = DataLoader(
-    val_dataset, batch_size=16, shuffle=False, collate_fn=collate_fn
-)
-
-
-model = Network()
-model.cuda()
-
-writer = SummaryWriter()
-
-optim = torch.optim.Adam(model.parameters(), lr=1e-4)
-cross_entropy = nn.CrossEntropyLoss()
-grad_accum_steps = 2
-
-step = 0
-
-for epoch in tqdm.trange(200):
-    model.train()
-    cross_entropy.reduction = "mean"
-    for batch in tqdm.tqdm(train_dataloader):
-        batch.to("cuda")
-
-        logits = model(batch["ids"], batch["last_element"])
-        loss = cross_entropy(logits, batch["labels"])
-
-        loss.backward()
-        if step % grad_accum_steps == 0:
-            optim.step()
-            optim.zero_grad()
-
-        writer.add_scalar("train_loss", loss.item(), step)
-        step += 1
-
-    avg_loss = 0
-    avg_acc = 0
-    n_batches = 0
-
-    model.eval()
-    cross_entropy.reduction = "sum"
-    for batch, _ in zip(val_dataloader, tqdm.trange(1000)):
-        batch.to("cuda")
-
-        with torch.no_grad():
             logits = model(batch["ids"], batch["last_element"])
+            loss = cross_entropy(logits, batch["labels"])
 
-        loss = cross_entropy(logits, batch["labels"])
-        avg_loss += loss.item()
-        avg_acc += (logits.argmax(dim=-1) == batch["labels"]).float().sum().item()
-        n_batches += batch["ids"].shape[0]
+            loss.backward()
+            if step % grad_accum_steps == 0:
+                optim.step()
+                optim.zero_grad()
 
-    avg_loss /= n_batches
-    avg_acc /= n_batches
+            writer.add_scalar("train_loss", loss.item(), step)
+            step += 1
 
-    writer.add_scalar("val_loss", loss, step)
-    writer.add_scalar("val_acc", avg_acc, step)
+        avg_loss = 0
+        avg_acc = 0
+        n_batches = 0
 
-    torch.save(model.state_dict(), output_dir / f"model_{epoch}.pth")
+        model.eval()
+        cross_entropy.reduction = "sum"
+        for batch, _ in zip(val_dataloader, tqdm.trange(1000)):
+            batch.to("cuda")
+
+            with torch.no_grad():
+                logits = model(batch["ids"], batch["last_element"])
+
+            loss = cross_entropy(logits, batch["labels"])
+            avg_loss += loss.item()
+            avg_acc += (logits.argmax(dim=-1) == batch["labels"]).float().sum().item()
+            n_batches += batch["ids"].shape[0]
+
+        avg_loss /= n_batches
+        avg_acc /= n_batches
+
+        writer.add_scalar("val_loss", loss, step)
+        writer.add_scalar("val_acc", avg_acc, step)
+
+        torch.save(model.state_dict(), output_dir / f"model_{epoch}.pth")
+
+
+if __name__ == "__main__":
+    train()
