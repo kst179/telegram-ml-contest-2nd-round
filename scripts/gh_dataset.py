@@ -6,8 +6,7 @@ import torch
 from scipy.stats import loglaplace
 
 from .ctokenizer import CTokenizer
-from .languages_list import Languages, BinLabels, string_to_enum
-
+from .languages_list import BinLabels, Languages, string_to_enum
 from .paths import *
 
 # estimated parameters of log log distribution of the texts len in the tg data
@@ -40,16 +39,21 @@ class MixedDataset(torch.utils.data.Dataset):
 
             self.files = []
             self.origins = []
-            self.lang = []
+            self.langs = []
             self.is_code = []
 
             for file, meta in splits[split].items():
-                self.files.append(Path(file))
-                self.origins.append(meta["origin"])
-                self.langs.append(Languages.from_string(meta["lang"]).value)
-                self.is_code.append(BinLabels(int(meta["is_code"])).value)
+                file = Path(file)
 
-            self.files = sorted(Path(file) for file in splits[split])
+                if not file.exists() or (mode != "binary" and meta["lang"] is None):
+                    continue
+
+                self.files.append(file)
+                self.origins.append(meta["origin"])
+                self.langs.append(Languages.from_string(meta["lang"]).value
+                                  if meta["lang"] is not None
+                                  else None)
+                self.is_code.append(BinLabels(int(meta["is_code"])).value)
         else:
             gh_files = sorted(gh_dir.glob("*/*"))
             tg_files = sorted(tg_dir.glob("*/*"))
@@ -104,7 +108,7 @@ class MixedDataset(torch.utils.data.Dataset):
 
             sampled_text = "\n".join(sampled_lines)
             
-            if len(sampled_text) != 0:
+            if len(sampled_text.strip()) != 0:
                 return sampled_text[:self.max_len]
             
             if num_trys_left == 0:
@@ -125,7 +129,7 @@ class MixedDataset(torch.utils.data.Dataset):
         if self.mode == "binary":
             label = self.is_code[item]
         else:
-            label = self.lang[item]
+            label = self.langs[item]
 
         text = file.read_text()
         if self.subsample_lines and origin == "gh":
@@ -134,7 +138,7 @@ class MixedDataset(torch.utils.data.Dataset):
         if self.tokenize:
             text = self.tokenizer.encode(text)
 
-        return text, label
+        return text, label, origin
 
 class GHDataset(torch.utils.data.Dataset):
     def __init__(

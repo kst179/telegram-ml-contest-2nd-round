@@ -22,8 +22,8 @@ def pad_to_multiple_of_8(tensor, value=0):
 class NetworkConfig:
     num_classes: int = 2
     vocab_size: int = 2**15
-    hidden_dim: int = 96
-    num_layers: int = 2
+    hidden_dim: int = 104
+    num_layers: int = 3
     bidirectional: bool = True
     num_threads_per_dir: int = 1
 
@@ -169,9 +169,6 @@ class Network(nn.Module):
 
             classifier_weight = pad_to_multiple_of_8(classifier_weight, 0)
             classifier_bias = pad_to_multiple_of_8(classifier_bias, -torch.inf)
-
-            print(classifier_weight.shape)
-            print(classifier_bias.shape)
 
             write_tensor(classifier_weight)
             write_tensor(classifier_bias)

@@ -2,6 +2,7 @@ import ctypes
 
 from .paths import *
 
+
 class CTokenizer:
     def __init__(self):
         self.lib = ctypes.CDLL(BUILD / "libtokenizer.so")
@@ -22,6 +23,10 @@ class CTokenizer:
         self.tokenizer_p = self.lib.createTokenizer(
             vocab_path.as_posix().encode()
         )
+        
+        self.pad_token = 0
+        self.start_token = 1
+        self.unk_token = 2
 
     def __call__(self, string):
         return self.encode(string)

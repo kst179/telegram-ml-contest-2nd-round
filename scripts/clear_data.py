@@ -1,6 +1,5 @@
-from paths import * 
-
 from gh_dataset import BinaryDataset
+from paths import *
 
 data = BinaryDataset()
 
