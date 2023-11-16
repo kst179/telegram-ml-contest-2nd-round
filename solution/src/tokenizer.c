@@ -98,7 +98,8 @@ PrefixTree* getTokenizerNode(Tokenizer* tokenizer, PrefixTree* node) {
 }
 
 int nextToken(Tokenizer* tokenizer) {
-    PrefixTree* node = getTokenizerNode(tokenizer, tokenizer->prefix_tree);
+    PrefixTree* root = getTokenizerNode(tokenizer, tokenizer->prefix_tree);
+    PrefixTree* node = root;
     tokenizer->last_node = node;
 
     if (tokenizer->string[tokenizer->char_idx] == 0) {
@@ -106,40 +107,42 @@ int nextToken(Tokenizer* tokenizer) {
     }
 
     int last_char_idx = tokenizer->char_idx;
-    PrefixTree* last_node = node;
+    PrefixTree* last_node = NULL;
 
     for (; tokenizer->string[tokenizer->char_idx] != 0; tokenizer->char_idx++) {
         unsigned char byte = tokenizer->string[tokenizer->char_idx];
+
+        if (node->children[byte] == NULL) {
+            if (last_node == NULL) {
+                tokenizer->char_idx = last_char_idx + 1;
+                return tokenizer->unk_token_id;
+            }
+
+            tokenizer->char_idx = last_char_idx + 1;
+            return last_node->token_id;
+        }
+
+        node = getTokenizerNode(tokenizer, node->children[byte]);
 
         if (node->token_id != -1) {
             last_char_idx = tokenizer->char_idx;
             last_node = node;
         }
-
-        if (node->children[byte] == NULL) {
-            if (last_node == getTokenizerNode(tokenizer, tokenizer->prefix_tree)) {
-                tokenizer->char_idx++;
-                return tokenizer->unk_token_id;
-            }
-
-            tokenizer->char_idx = last_char_idx;
-            return last_node->token_id;
-        }
-
-        node = getTokenizerNode(tokenizer, node->children[byte]);
     }
     
-    if (node->token_id != -1) {
-        return node->token_id;
+    if (last_node == NULL) {
+        tokenizer->char_idx = last_char_idx + 1;
+        return tokenizer->unk_token_id;
     }
-
-    return tokenizer->unk_token_id;
+    
+    tokenizer->char_idx = last_char_idx + 1;
+    return last_node->token_id;
 }
 
 void tokenize(Tokenizer* tokenizer, const char* string, int* num_tokens, int** tokens) {
     setTokenizeString(tokenizer, string);
     
-    *tokens = malloc(sizeof(int) * (strlen(string) + 2));
+    *tokens = malloc(sizeof(int) * (strlen(string) + 3));
 
     *num_tokens = 0;
     (*tokens)[(*num_tokens)++] = tokenizer->start_token_id;
@@ -148,7 +151,7 @@ void tokenize(Tokenizer* tokenizer, const char* string, int* num_tokens, int** t
         int token_id = nextToken(tokenizer);
     
         if (token_id == -1) {
-            return;
+            break;
         }
 
         (*tokens)[(*num_tokens)++] = token_id;
