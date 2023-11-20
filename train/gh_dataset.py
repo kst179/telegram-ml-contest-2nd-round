@@ -5,11 +5,11 @@ import numpy as np
 import torch
 from scipy.stats import loglaplace
 
-from .ctokenizer import CTokenizer
-from .languages_list import BinLabels, Languages, string_to_enum
-from .paths import *
+from train.paths import *
+from train.ctokenizer import CTokenizer
+from train.languages_list import BinLabels, Languages
 
-# estimated parameters of log log distribution of the texts len in the tg data
+# estimated parameters of the fisk distribution of the texts len in the tg data
 ALPHA = 70.53031203267946
 BETA = 1.2777589461265924
 

@@ -1,9 +1,8 @@
 import ctypes
-
 import numpy as np
-from .paths import *
 
-from .ctokenizer import CTokenizer
+from train.paths import *
+from train.ctokenizer import CTokenizer
 
 class Matrix(ctypes.Structure):
     _fields_ = [

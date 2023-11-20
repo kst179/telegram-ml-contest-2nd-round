@@ -9,9 +9,9 @@ from tokenizers import ByteLevelBPETokenizer
 from torch import nn
 from torch.utils.data.dataloader import DataLoader
 
-from .gh_dataset import MixedDataset
-from .gru_model import Network, NetworkConfig
-from .paths import ARTIFACTS
+from train.paths import *
+from train.gh_dataset import MixedDataset
+from train.gru_model import Network, NetworkConfig
 
 output_dir = ARTIFACTS / "gru_weights"
 output_dir.mkdir(exist_ok=True, parents=True)

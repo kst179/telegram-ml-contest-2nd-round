@@ -1,8 +1,4 @@
-import sys
-from pathlib import Path 
-
-sys.path.insert(0, Path(__file__).parent.parent.as_posix())
-
+from train.paths import *
 from train.gru_trainer import Trainer
 from train.gru_model import NetworkConfig
 

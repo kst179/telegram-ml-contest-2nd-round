@@ -1,6 +1,6 @@
 import ctypes
 
-from .paths import *
+from train.paths import *
 
 
 class CTokenizer:
