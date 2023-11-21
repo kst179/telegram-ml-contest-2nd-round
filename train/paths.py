@@ -2,11 +2,11 @@ from pathlib import Path
 import sys
 
 WORKSPACE_DIR = Path(__file__).parent.parent
-DATA = Path("data")
-ARTIFACTS = Path("artifacts")
-SOLUTION = Path(".")
-RESOURCES = SOLUTION / "resources"
-BUILD = SOLUTION / "build"
+DATA = WORKSPACE_DIR / "data"
+ARTIFACTS = WORKSPACE_DIR / "artifacts"
+SOLUTION = WORKSPACE_DIR
+RESOURCES = WORKSPACE_DIR / "resources"
+BUILD = WORKSPACE_DIR / "build"
 
 SPLIT_FILE = DATA / "splits.json"
 
